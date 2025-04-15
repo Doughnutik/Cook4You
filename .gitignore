@@ -169,3 +169,6 @@ cython_debug/
 *.toc
 template.cls
 *.aux
+
+har_and_cookies
+stuff
