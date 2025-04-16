@@ -1,9 +1,29 @@
 import asyncio
-from code.model.model import Conversation
+from model.model import Model
+from pathlib import Path
+from dotenv import load_dotenv
+from os import getenv
+
+import logging
+
+log_file = Path(__file__).parent / "logs.log"
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+file_handler = logging.FileHandler(log_file, encoding="utf-8")
+file_handler.setLevel(level=logging.INFO)
+formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+env_file = Path(__file__) / "model/.env"
+load_dotenv(env_file)
+CHAT_MODEL = getenv("CHAT_MODEL")
+IMAGE_MODEL = getenv("IMAGE_MODEL")
+INITIAL_PROMPT = getenv("INITIAL_PROMPT")
 
 async def main():
-    content = "Ты будешь в роли эксперта по готовке. Пользователь будет задавать вопросы касательно приготовления блюд (рецепт блюда, как его готовить, насколько сложно и сколько займёт времени, различные нюансы и уточнения), ты будешь на эти вопросы отвечать"
-    conversation = Conversation(content)
+    logger.info("Создан новый чат")
+    conversation = Model(CHAT_MODEL, IMAGE_MODEL, INITIAL_PROMPT, logger)
     while True:
         user_input = input("User: \n")
         if user_input.lower() == 'exit':
