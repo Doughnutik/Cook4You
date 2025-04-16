@@ -20,10 +20,11 @@ load_dotenv(env_file)
 CHAT_MODEL = getenv("CHAT_MODEL")
 IMAGE_MODEL = getenv("IMAGE_MODEL")
 INITIAL_PROMPT = getenv("INITIAL_PROMPT")
+IMAGE_GENERATION_PROMPT = getenv("IMAGE_GENERATION_PROMPT")
 
 async def main():
     logger.info("Создан новый чат")
-    conversation = Model(CHAT_MODEL, IMAGE_MODEL, INITIAL_PROMPT, logger)
+    conversation = Model(CHAT_MODEL, IMAGE_MODEL, INITIAL_PROMPT, IMAGE_GENERATION_PROMPT, logger)
     while True:
         user_input = input("User: \n")
         if user_input.lower() == 'exit':

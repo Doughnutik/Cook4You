@@ -6,7 +6,8 @@ RESPONSE_ERROR = "Ошибка получение ответа модели"
 IMAGE_ERROR = "Ошибка генерации изображения"
 
 class Model:
-    def __init__(self, chat_model: str, image_model: str, initial_prompt: str, logger: Logger):
+    def __init__(self, chat_model: str, image_model: str, initial_prompt: str, 
+                 image_generation_prompt: str, logger: Logger):
         self.client = AsyncClient(provider=RetryProvider([Blackbox, PollinationsAI], shuffle=True))
         self.history = [
             {
@@ -14,13 +15,15 @@ class Model:
                 "content": f"{initial_prompt}"
             }
         ]
+        self.image_generation_prompt = image_generation_prompt
         self.chat_model = chat_model
         self.image_model = image_model
         self.logger = logger
         self.logger.info("Создан новый Async клиент\n"
                     f"Чат модель: {chat_model}\n"
                     f"Модель изображений: {image_model}\n"
-                    f"Начальный промпт: {initial_prompt}\n")
+                    f"Начальный промпт: {initial_prompt}\n"
+                    f"Промпт для генерации изображений: {image_generation_prompt}\n\n")
     
     def add_message(self, role: str, content: str):
         self.history.append({
@@ -76,7 +79,7 @@ class Model:
             return image_url
     
     async def make_prompt_for_image_model(self) -> str:
-        self.add_message("user", "Исходя из моих запросов, сформулируй на английском языке полное описание блюда, которое я хочу сейчас приготовить, учитывая тот рецепт, который ты мне написал. Я его отправлю генератору изображений. Очень важно, чтобы описание соответствовало твоему рецепту влоть до мелочей, иначе изображение не будет описывать ожидаемое блюдо! Не нужно никаких лишний слов и комментариев, только промпт для генератора изображений")
+        self.add_message("user", self.image_generation_prompt)
         
         prompt = ""
         try:
@@ -94,7 +97,7 @@ class Model:
         
     async def image(self) -> str:
         prompt = await self.make_prompt_for_image_model()
-        self.logger.info(f"Prompt для изображения: {prompt}")
+        # self.logger.info(f"Prompt для изображения: {prompt}")
         if len(prompt) == 0:
             print(IMAGE_ERROR)
             return ""
