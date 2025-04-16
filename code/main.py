@@ -15,7 +15,7 @@ formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(message)s')
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
-env_file = Path(__file__) / "model/.env"
+env_file = Path(__file__).parent / "model/.env"
 load_dotenv(env_file)
 CHAT_MODEL = getenv("CHAT_MODEL")
 IMAGE_MODEL = getenv("IMAGE_MODEL")
@@ -29,8 +29,12 @@ async def main():
         if user_input.lower() == 'exit':
             print("\nGoodbye!")
             break
-
-        await conversation.response(user_input)
+        elif user_input.lower() == 'изображение':
+            url = await conversation.image()
+            if len(url) > 0:
+                print(url)
+        else:
+            await conversation.response(user_input)
 
 if __name__ == "__main__":
     asyncio.run(main())
