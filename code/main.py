@@ -15,7 +15,7 @@ formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(message)s')
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
-env_file = Path(__file__).parent / "model/.env"
+env_file = Path(__file__).parent / ".env"
 load_dotenv(env_file)
 CHAT_MODEL = getenv("CHAT_MODEL")
 IMAGE_MODEL = getenv("IMAGE_MODEL")
