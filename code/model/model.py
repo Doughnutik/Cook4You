@@ -1,29 +1,22 @@
 from g4f.client import AsyncClient
 from g4f.Provider import RetryProvider, Blackbox, PollinationsAI
 from logging import Logger
+from storage import mongodb
 
 RESPONSE_ERROR = "Ошибка получение ответа модели"
 IMAGE_ERROR = "Ошибка генерации изображения"
 
 class Model:
-    def __init__(self, chat_model: str, image_model: str, initial_prompt: str, 
+    def __init__(self, chat_model: str, image_model: str, 
                  image_generation_prompt: str, logger: Logger):
         self.client = AsyncClient(provider=RetryProvider([Blackbox, PollinationsAI], shuffle=True))
-        self.history = [
-            {
-                "role": "system",
-                "content": f"{initial_prompt}"
-            }
-        ]
         self.image_generation_prompt = image_generation_prompt
         self.chat_model = chat_model
         self.image_model = image_model
         self.logger = logger
-        self.logger.info("Создан новый Async клиент\n"
+        self.logger.info("Создан новый Async клиент модели\n"
                     f"Чат модель: {chat_model}\n"
-                    f"Модель изображений: {image_model}\n"
-                    f"Начальный промпт: {initial_prompt}\n"
-                    f"Промпт для генерации изображений: {image_generation_prompt}\n\n")
+                    f"Модель изображений: {image_model}\n\n")
     
     def add_message(self, role: str, content: str):
         self.history.append({
@@ -46,8 +39,7 @@ class Model:
         finally:
             return ''.join(result)
     
-    async def response(self, user_message: str) -> None:
-        self.add_message("user", user_message)
+    async def response(self, history: list[dict]) -> None:
         try:
             stream = self.client.chat.completions.stream(
                 model=self.chat_model,
