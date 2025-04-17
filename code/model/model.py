@@ -1,10 +1,9 @@
 from g4f.client import AsyncClient
 from g4f.Provider import RetryProvider, Blackbox, PollinationsAI
-from logging import Logger
 
 class Model:
     def __init__(self, chat_model: str, image_model: str, 
-                 image_generation_prompt: str, logger: Logger):
+                 image_generation_prompt: str, logger):
         self.client = AsyncClient(provider=RetryProvider([Blackbox, PollinationsAI], shuffle=True))
         self.image_generation_prompt = image_generation_prompt
         self.chat_model = chat_model
@@ -66,6 +65,7 @@ class Model:
         
     async def image(self, history: list[dict]) -> str:
         prompt = await self.make_prompt_for_image_model(history)
+        self.logger.info(f"\nprompt для изображения: {prompt}\n")
         if len(prompt) == 0:
             self.logger.error(f"image: пустой prompt для генерации изображения от провайдера")
             return ""

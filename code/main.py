@@ -1,42 +1,38 @@
 import asyncio
-from model.model import Model
-from pathlib import Path
-from dotenv import load_dotenv
-from os import getenv
-
-import logging
-
-log_file = Path(__file__).parent / "logs.log"
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-file_handler = logging.FileHandler(log_file, encoding="utf-8")
-file_handler.setLevel(level=logging.INFO)
-formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(message)s')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-
-env_file = Path(__file__).parent / ".env"
-load_dotenv(env_file)
-CHAT_MODEL = getenv("CHAT_MODEL")
-IMAGE_MODEL = getenv("IMAGE_MODEL")
-INITIAL_PROMPT = getenv("INITIAL_PROMPT")
-IMAGE_GENERATION_PROMPT = getenv("IMAGE_GENERATION_PROMPT")
+from logger import logger
+from client import client
 
 async def main():
-    logger.info("Создан новый чат")
-    conversation = Model(CHAT_MODEL, IMAGE_MODEL, INITIAL_PROMPT, IMAGE_GENERATION_PROMPT, logger)
+    logger.info("Сервер запущен")
+    id = "-"
+    while id == "-":
+        email = input("Введите email: ")
+        password = input("Введите пароль: ")
+        id = await client.get_user_id(email, password)
+        if len(id) == 0:
+            id = await client.new_user(email, password)
+        elif id == "-":
+            print("Неверный пароль, попробуйте снова")
     
+    chats = await client.get_user_chats(id)
+    print()
+    print(chats)
+    print()
+    
+    chat_id = input("Введите chat_id: ")
+    if chat_id == "-":
+        title = input("Введите название нового чата: ")
+        chat_id = await client.new_chat(id, title)
     while True:
-        user_input = input("User: \n")
-        if user_input.lower() == 'exit':
-            print("\nGoodbye!")
+        user_input = input("Ваш вопрос: ")
+        if user_input == "exit":
             break
-        elif user_input.lower() == 'изображение':
-            url = await conversation.image()
-            if len(url) > 0:
-                print(url)
+        elif user_input == "image":
+            url = await client.ask_question(id, chat_id, '', "image")
+            print(f"Ссылка на картинку: {url}")
         else:
-            await conversation.response(user_input)
+            response = await client.ask_question(id, chat_id, user_input, "text")
+            print(f"Ответ модели: {response}")
 
 if __name__ == "__main__":
     asyncio.run(main())
