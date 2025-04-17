@@ -1,10 +1,6 @@
 from g4f.client import AsyncClient
 from g4f.Provider import RetryProvider, Blackbox, PollinationsAI
 from logging import Logger
-from storage import mongodb
-
-RESPONSE_ERROR = "Ошибка получение ответа модели"
-IMAGE_ERROR = "Ошибка генерации изображения"
 
 class Model:
     def __init__(self, chat_model: str, image_model: str, 
@@ -18,42 +14,21 @@ class Model:
                     f"Чат модель: {chat_model}\n"
                     f"Модель изображений: {image_model}\n\n")
     
-    def add_message(self, role: str, content: str):
-        self.history.append({
-            "role": role,
-            "content": content
-        })
-        
-    async def print_stream_response(self, stream_response) -> str:
-        result = []
+    async def response(self, history: list[dict]) -> str:
         try:
-            async for chunk in stream_response:
-                if chunk.choices and chunk.choices[0].delta.content:
-                    print(chunk.choices[0].delta.content, end="")
-                    result.append(chunk.choices[0].delta.content)
-            if len(result) > 0:
-                print()
-        except Exception as e:
-            self.logger.error(f"print_steam_response: {e}")
-            result = []
-        finally:
-            return ''.join(result)
-    
-    async def response(self, history: list[dict]) -> None:
-        try:
-            stream = self.client.chat.completions.stream(
+            response = await self.client.chat.completions.create(
                 model=self.chat_model,
-                messages=self.history
+                messages=history
             )
-            response = await self.print_stream_response(stream)
-            if len(response) > 0:
-                self.add_message("assistant", response)
-            else:
-                print(RESPONSE_ERROR)
+            
+            if response.choices:
+                return response.choices[0].message.content
+            
+            self.logger.error(f"response: пришёл пустой ответ от провайдера")
+            return ""
         except Exception as e:
             self.logger.error(f"response: {e}")
-            print(RESPONSE_ERROR)
-            self.history.pop()
+            return ""
         
     async def create_image(self, prompt: str) -> str:
         image_url = ""
@@ -70,30 +45,31 @@ class Model:
         finally:
             return image_url
     
-    async def make_prompt_for_image_model(self) -> str:
-        self.add_message("user", self.image_generation_prompt)
+    async def make_prompt_for_image_model(self, history: list[dict]) -> str:
+        history.append({
+            "role": "user",
+            "content": self.image_generation_prompt
+        })
         
         prompt = ""
         try:
             response = await self.client.chat.completions.create(
                 model=self.chat_model,
-                messages=self.history
+                messages=history
             )
             if response.choices:
                 prompt = response.choices[0].message.content
         except Exception as e:
             self.logger.error(f"make_prompt_for_image_model: {e}")
         finally:
-            self.history.pop()
             return prompt
         
-    async def image(self) -> str:
-        prompt = await self.make_prompt_for_image_model()
-        # self.logger.info(f"Prompt для изображения: {prompt}")
+    async def image(self, history: list[dict]) -> str:
+        prompt = await self.make_prompt_for_image_model(history)
         if len(prompt) == 0:
-            print(IMAGE_ERROR)
+            self.logger.error(f"image: пустой prompt для генерации изображения от провайдера")
             return ""
         url = await self.create_image(prompt=prompt)
         if len(url) == 0:
-            print(IMAGE_ERROR)
+            self.logger.error(f"image: пустой url изображения от провайдера")
         return url
