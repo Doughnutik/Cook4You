@@ -28,13 +28,13 @@ class MongoDB:
         except Exception as e:
             self.logger.error(f"create_indexes: {e}")
        
-    # Проверка наличия пользователя в бд     
-    async def user_exists(self, user_id: str) -> bool:
+    # Проверка наличия пользователя user_id в бд     
+    async def user_id_exists(self, user_id: str) -> bool:
         try:
             user = await self.users.find_one({"_id": ObjectId(user_id)})
             return user is not None
         except Exception as e:
-            self.logger.error(f"user_exists: {e}")
+            self.logger.error(f"user_id_exists: {e}")
             return False
     
     # Проверка наличия чата у пользователя в бд
@@ -55,7 +55,7 @@ class MongoDB:
             user = {
                 "email": email,
                 "password_hash": password_hash,
-                "created_at": datetime.now()
+                "created_at": datetime.now().isoformat()
             }
             result = await self.users.insert_one(user)
             return str(result.inserted_id)
@@ -69,8 +69,8 @@ class MongoDB:
             chat = {
                 "user_id": ObjectId(user_id),
                 "title": title,
-                "created_at": datetime.now(),
-                "updated_at": datetime.now(),
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat(),
                 "messages": []
             }
             result = await self.chats.insert_one(chat)
@@ -86,13 +86,13 @@ class MongoDB:
                 "role": role,
                 "type": type,  # "text" или "image"
                 "content": content, # "text" или "url"
-                "created_at": datetime.now()
+                "created_at": datetime.now().isoformat()
             }
             result = await self.chats.update_one(
                 {"_id": ObjectId(chat_id)},
                 {
                     "$push": {"messages": message},
-                    "$set": {"updated_at": datetime.now()}
+                    "$set": {"updated_at": datetime.now().isoformat()}
                 }
             )
             return result.modified_count > 0
@@ -139,6 +139,7 @@ class MongoDB:
             self.logger.error(f"delete_all_chats_for_user: {e}")
             return -1
         
+    # Получение user_id по email и password
     async def get_user_id(self, email: str, password: str) -> str:
         try:
             user = await self.users.find_one({"email": email})
@@ -149,10 +150,19 @@ class MongoDB:
             if bcrypt.checkpw(password.encode(), password_hash):
                 return str(user["_id"])
             else:
-                return "-"
+                return ""
         except Exception as e:
             self.logger.error(f"get_user_id: {e}")
             return ""
+    
+    # Проверка существования email в бд
+    async def user_exists(self, email: str) -> bool:
+        try:
+            user = await self.users.find_one({"email": email})
+            return user is not None
+        except Exception as e:
+            self.logger.error(f"user_exists: {e}")
+            return False
 
 if __name__ == "__main__":
     async def main():

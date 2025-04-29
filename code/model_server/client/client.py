@@ -21,7 +21,7 @@ class Client:
         """
         Обрабатывает запрос пользователя
         """
-        if not await self.storage.user_exists(user_id):
+        if not await self.storage.user_id_exists(user_id):
             return ""
         if not await self.storage.chat_exists_for_user(chat_id, user_id):
             return ""
@@ -86,6 +86,9 @@ class Client:
     
     async def get_user_id(self, email: str, password: str) -> str:
         return await self.storage.get_user_id(email, password)
+    
+    async def check_user_existance(self, email: str) -> bool:
+        return await self.storage.user_exists(email)
 
     async def new_chat(self, user_id: str, title: str) -> str:
         chat_id = await self.storage.create_chat(user_id=user_id, title=title)
@@ -108,8 +111,8 @@ class Client:
     async def delete_all_user_chats(self, user_id: str) -> int:
         return await self.storage.delete_all_chats_for_user(user_id)
     
-    async def user_exists(self, user_id: str) -> bool:
-        return await self.storage.user_exists(user_id)
+    async def user_id_exists(self, user_id: str) -> bool:
+        return await self.storage.user_id_exists(user_id)
     
     async def chat_exists_for_user(self, chat_id: str, user_id: str) -> bool:
         return await self.storage.chat_exists_for_user(chat_id, user_id)

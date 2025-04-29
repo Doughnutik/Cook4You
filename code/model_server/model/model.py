@@ -4,7 +4,7 @@ from g4f.Provider import RetryProvider, Blackbox, PollinationsAI
 class Model:
     def __init__(self, chat_model: str, image_model: str, 
                  image_generation_prompt: str, logger):
-        self.client = AsyncClient(provider=RetryProvider([Blackbox, PollinationsAI], shuffle=True))
+        self.client = AsyncClient()
         self.image_generation_prompt = image_generation_prompt
         self.chat_model = chat_model
         self.image_model = image_model

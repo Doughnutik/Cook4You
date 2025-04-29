@@ -1,0 +1,22 @@
+@startuml
+
+entity "users" {
+	* _id PRIMARY KEY : ObjectID
+  	--
+  	email : STRING
+	password_hash : STRING
+	created_at : DATE
+}
+
+entity "chats" {
+	* _id PRIMARY KEY : ObjectID
+  	--
+  	user_id FOREIGN KEY : ObjectID
+	title : STRING
+	created_at : DATE
+	updated_at : DATE
+	messages : []JSON
+}
+  
+users ||--o{ chats
+@enduml
