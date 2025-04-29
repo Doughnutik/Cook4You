@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import asyncio
 from logger import logger
 from client import client
 from schemas.schemas import AuthData, AuthTokenResponse
@@ -66,6 +67,38 @@ async def login(auth_data: AuthData):
 async def get_me(user_id: str = Depends(verify_token)):
     return {"message": f"Привет, пользователь {user_id}!"}
 
+async def main():
+    logger.info("Сервер запущен")
+    id = "-"
+    while id == "-":
+        email = input("Введите email: ")
+        password = input("Введите пароль: ")
+        id = await client.get_user_id(email, password)
+        if len(id) == 0:
+            id = await client.new_user(email, password)
+        elif id == "-":
+            print("Неверный пароль, попробуйте снова")
+    
+    chats = await client.get_user_chats(id)
+    print()
+    print(chats)
+    print()
+    
+    chat_id = input("Введите chat_id: ")
+    if chat_id == "-":
+        title = input("Введите название нового чата: ")
+        chat_id = await client.new_chat(id, title)
+    while True:
+        user_input = input("Ваш вопрос: ")
+        if user_input == "exit":
+            break
+        elif user_input == "image":
+            url = await client.ask_question(id, chat_id, '', "image")
+            print(f"Ссылка на картинку: {url}")
+        else:
+            response = await client.ask_question(id, chat_id, user_input, "text")
+            print(f"Ответ модели: {response}")
+
 if __name__ == "__main__":
     logger.info("Сервер запущен на порту: %d", int(MODEL_SERVER_PORT))
     logger.info(f"http://{MODEL_SERVER_HOST}:{MODEL_SERVER_PORT}/docs")
@@ -75,5 +108,7 @@ if __name__ == "__main__":
         port=int(MODEL_SERVER_PORT),
         log_level="info",
     )
+    
+    
 # curl -X GET http://localhost:8080/me \
 #   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjgwYmE0N2ZiMzIyODdkOWRlNjgzNGEwIiwiZXhwIjoxNzQ1NjA0MzMxfQ.U5OY8XYihgkRKiq6OZYPCv-2pEWxso5gh9YbGPHBGYk"
