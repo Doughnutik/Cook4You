@@ -140,6 +140,10 @@ paths:
       responses:
         200:
           description: Чат создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatData'
         400:
           description: Некорректные параметры запроса
           content:
@@ -149,7 +153,7 @@ paths:
         401:
           description: Неавторизован
         500:
-          description: Ошибка создания чатов
+          description: Ошибка создания чата
           content:
             application/json:
               schema:
@@ -245,6 +249,10 @@ paths:
       responses:
         200:
           description: Название чата обновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatData'
         400:
           description: Некорректные параметры запроса
           content:
@@ -282,6 +290,10 @@ paths:
       responses:
         200:
           description: Сообщение добавлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatData'
         400:
           description: Некорректные параметры запроса
           content:
@@ -340,9 +352,6 @@ components:
         token:
           type: string
           description: JWT токен для аутентификации
-        user_id:
-          type: string
-          description: ID пользователя
     
     MessageData:
       type: object
@@ -350,7 +359,6 @@ components:
         - role
         - type
         - content
-        - created_at
       properties:
         role:
           type: string
@@ -367,11 +375,14 @@ components:
     ChatData:
       type: object
       required:
+        - chat_id
         - title
         - created_at
         - updated_at
         - messages
       properties:
+        chat_id:
+          type: string
         title:
           type: string
         created_at:

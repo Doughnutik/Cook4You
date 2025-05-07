@@ -103,7 +103,7 @@ class MongoDB:
     # Получение всех чатов пользователя
     async def get_chats_for_user(self, user_id: str):
         try:
-            cursor = self.chats.find({"user_id": ObjectId(user_id)}, {"messages": 0, "user_id": 0})  # Без сообщений и user_id
+            cursor = self.chats.find({"user_id": ObjectId(user_id)}, {"user_id": 0}) # Без user_id
             return [chat async for chat in cursor]
         except Exception as e:
             self.logger.error(f"get_chats_for_user: {e}")
@@ -117,6 +117,15 @@ class MongoDB:
         except Exception as e:
             self.logger.error(f"get_chat_messages: {e}")
             return []
+        
+    # Получение конкретного чата
+    async def get_chat(self, chat_id: str):
+        try:
+            chat = await self.chats.find_one({"_id": ObjectId(chat_id)})
+            return chat if chat else {}
+        except Exception as e:
+            self.logger.error(f"get_chat: {e}")
+            return {}
 
     # Удаление чата пользователя
     async def delete_chat_for_user(self, chat_id: str, user_id: str) -> bool:
@@ -131,13 +140,14 @@ class MongoDB:
             return False
 
     # Удаление всех чатов пользователя
-    async def delete_all_chats_for_user(self, user_id: str) -> int:
+    async def delete_all_chats_for_user(self, user_id: str) -> bool:
         try:
+            cnt = await self.chats.count_documents({"user_id": ObjectId(user_id)})
             result = await self.chats.delete_many({"user_id": ObjectId(user_id)})
-            return result.deleted_count
+            return result.deleted_count == cnt
         except Exception as e:
             self.logger.error(f"delete_all_chats_for_user: {e}")
-            return -1
+            return False
         
     # Получение user_id по email и password
     async def get_user_id(self, email: str, password: str) -> str:
@@ -163,6 +173,18 @@ class MongoDB:
         except Exception as e:
             self.logger.error(f"user_exists: {e}")
             return False
+        
+    async def rename_chat(self, chat_id: str, new_title: str) -> bool:
+        try:
+            result = await self.chats.update_one(
+                {"_id": ObjectId(chat_id)},
+                {"$set": {"title": new_title}}
+            )
+            return result.modified_count == 1
+        except Exception as e:
+            self.logger.error(f"rename_chat: {e}")
+            return False
+            
 
 if __name__ == "__main__":
     async def main():

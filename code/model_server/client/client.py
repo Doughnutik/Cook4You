@@ -104,11 +104,14 @@ class Client:
 
     async def get_chat_history(self, chat_id: str):
         return await self.storage.get_chat_messages(chat_id)
+    
+    async def get_chat(self, chat_id: str):
+        return await self.storage.get_chat(chat_id)
 
     async def delete_chat(self, chat_id: str, user_id: str) -> bool:
         return await self.storage.delete_chat_for_user(chat_id, user_id)
 
-    async def delete_all_user_chats(self, user_id: str) -> int:
+    async def delete_all_user_chats(self, user_id: str) -> bool:
         return await self.storage.delete_all_chats_for_user(user_id)
     
     async def user_id_exists(self, user_id: str) -> bool:
@@ -117,3 +120,8 @@ class Client:
     async def chat_exists_for_user(self, chat_id: str, user_id: str) -> bool:
         return await self.storage.chat_exists_for_user(chat_id, user_id)
     
+    async def rename_chat(self, chat_id: str, title: str) -> bool:
+        return await self.storage.rename_chat(chat_id, title)
+    
+    async def add_message(self, chat_id: str, role: str, type: str, content: str) -> bool:
+        return await self.storage.add_message(chat_id, role, type, content)

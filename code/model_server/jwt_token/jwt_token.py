@@ -23,7 +23,7 @@ def create_access_token(data: dict):
 
 def verify_token(token: str = Depends(oauth2_scheme)) -> str:
     credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
+        status_code=401,
         detail="неверный или отсутствующий токен",
         headers={"WWW-Authenticate": "Bearer"},
     )

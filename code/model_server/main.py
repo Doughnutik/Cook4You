@@ -1,10 +1,10 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Body
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
 from logger import logger
 from client import client
-from schemas.schemas import AuthData, AuthTokenResponse
+from schemas.schemas import AuthData, AuthTokenResponse, ChatData, MessageData, CreateUpdateChat
 from pathlib import Path
 from dotenv import load_dotenv
 from os import getenv
@@ -30,9 +30,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-    
-    
-@app.post("/register")
+
+@app.post("/register", response_model=AuthTokenResponse)
 async def register(auth_data: AuthData):
     email = auth_data.email
     password = auth_data.password
@@ -44,11 +43,13 @@ async def register(auth_data: AuthData):
     if exists:
         raise HTTPException(status_code=409, detail="email уже существует")
     user_id = await client.new_user(email, password)
+    if len(user_id) == 0:
+        raise HTTPException(status_code=500, detail="ошибка создания пользователя")
     
     token = create_access_token(data={"user_id": user_id})
-    return {"user_id": user_id, "token": token}
+    return AuthTokenResponse(token=token)
 
-@app.post("/login")
+@app.post("/login", response_model=AuthTokenResponse)
 async def login(auth_data: AuthData):
     email = auth_data.email
     password = auth_data.password
@@ -58,14 +59,99 @@ async def login(auth_data: AuthData):
 
     user_id = await client.get_user_id(email, password)
     if len(user_id) == 0:
-        raise HTTPException(status_code=401, detail="неверный email или пароль")
+        raise HTTPException(status_code=401, detail="неверные email или пароль")
 
     token = create_access_token(data={"user_id": user_id})
-    return {"user_id": user_id, "token": token}
+    return AuthTokenResponse(token=token)
 
-@app.get("/me")
-async def get_me(user_id: str = Depends(verify_token)):
-    return {"message": f"Привет, пользователь {user_id}!"}
+@app.get("/chats", response_model=list[ChatData])
+async def get_all_chats(user_id: str = Depends(verify_token)):
+    chats = await client.get_user_chats(user_id)
+    result = []
+    for chat in chats:
+        result.append(ChatData(chat_id=str(chat['_id']),
+                               title=chat['title'],
+                               created_at=chat['created_at'],
+                               updated_at=chat['updated_at'],
+                               messages=chat['messages']))
+    return result
+
+@app.delete("/chats")
+async def delete_all_chats(user_id: str = Depends(verify_token)):
+    result = await client.delete_all_user_chats(user_id)
+    if not result:
+        raise HTTPException(status_code=500, detail="ошибка удаления чатов")
+    
+@app.post("/chat", response_model=ChatData)
+async def create_chat(data: CreateUpdateChat, user_id: str = Depends(verify_token)):
+    chat_id = await client.new_chat(user_id, data.title)
+    if len(chat_id) == 0:
+        raise HTTPException(status_code=500, detail="ошибка создания чата")
+    chat = await client.get_chat(chat_id)
+    if len(chat) == 0:
+        raise HTTPException(status_code=500, detail="ошибка получения чата")
+    return ChatData(chat_id=chat_id,
+                    title=chat['title'],
+                    created_at=chat['created_at'],
+                    updated_at=chat['updated_at'],
+                    messages=chat['messages'])
+
+@app.get("/chat/{chat_id}", response_model=ChatData)
+async def get_chat(chat_id: str, user_id: str = Depends(verify_token)):
+    auth_correct = await client.chat_exists_for_user(chat_id, user_id)
+    if not auth_correct:
+        raise HTTPException(status_code=404, detail="чат для данного пользователя не найден")
+    chat = await client.get_chat(chat_id)
+    if len(chat) == 0:
+        raise HTTPException(status_code=500, detail="ошибка получения чата")
+    return ChatData(chat_id=chat_id,
+                    title=chat['title'],
+                    created_at=chat['created_at'],
+                    updated_at=chat['updated_at'],
+                    messages=chat['messages'])
+
+@app.delete("/chat/{chat_id}")
+async def delete_chat(chat_id: str, user_id: str = Depends(verify_token)):
+    auth_correct = await client.chat_exists_for_user(chat_id, user_id)
+    if not auth_correct:
+        raise HTTPException(status_code=404, detail="чат для данного пользователя не найден")
+    result = await client.delete_chat(chat_id, user_id)
+    if not result:
+        raise HTTPException(status_code=500, detail="ошибка удаления чата")
+    
+@app.put("/chat/{chat_id}/rename", response_model=ChatData)
+async def rename_chat(chat_id: str, data: CreateUpdateChat, user_id: str = Depends(verify_token)):
+    auth_correct = await client.chat_exists_for_user(chat_id, user_id)
+    if not auth_correct:
+        raise HTTPException(status_code=404, detail="чат для данного пользователя не найден")
+    result = await client.rename_chat(chat_id, data.title)
+    if not result:
+        raise HTTPException(status_code=500, detail="ошибка переименования чата")
+    chat = await client.get_chat(chat_id)
+    if len(chat) == 0:
+        raise HTTPException(status_code=500, detail="ошибка получения чата")
+    return ChatData(chat_id=chat_id,
+                    title=chat['title'],
+                    created_at=chat['created_at'],
+                    updated_at=chat['updated_at'],
+                    messages=chat['messages'])
+
+@app.put("/chat/{chat_id}/add-message", response_model=ChatData)
+async def add_message_to_chat(chat_id: str, message: MessageData, user_id: str = Depends(verify_token)):
+    auth_correct = await client.chat_exists_for_user(chat_id, user_id)
+    if not auth_correct:
+        raise HTTPException(status_code=404, detail="чат для данного пользователя не найден")
+    result = await client.add_message(chat_id, message.role, message.type, message.content)
+    if not result:
+        raise HTTPException(status_code=500, detail="ошибка добавления сообщения в чат")
+    chat = await client.get_chat(chat_id)
+    if len(chat) == 0:
+        raise HTTPException(status_code=500, detail="ошибка получения чата")
+    return ChatData(chat_id=chat_id,
+                    title=chat['title'],
+                    created_at=chat['created_at'],
+                    updated_at=chat['updated_at'],
+                    messages=chat['messages'])
 
 async def main():
     logger.info("Сервер запущен")
@@ -110,5 +196,20 @@ if __name__ == "__main__":
     )
     
     
-curl -X GET http://localhost:8080/me \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjgxYjc3ZTVhYmIxOTY3NTAxZWEwODI4IiwiZXhwIjoxNzQ2NjMyMzUxfQ.ARdyOZkzeD00uXIeeF0A-FOBy2DuARPtcRImHe9oPgc"
+curl -X PUT http://localhost:8080/chat/{681bad955e7b94bff4d79e7c}/add-message \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjgxYmE3YWY1ZTdiOTRiZmY0ZDc5ZTdhIiwiZXhwIjoxNzQ2NjQ0ODQ4fQ.8VudHJxU1eKI2qNSSZUCYVJZ7tjzzJDDdkPOjZ7cl0U" \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "role": "user",
+  "type": "text",
+  "content": "привет, как дела",
+  "created_at": "2025-05-07T19:03:53.275Z"
+}'
+
+# curl -X GET http://localhost:8080/chats \
+#   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjgwYjZlMjJkNzE2YTVjZGFmYTUxY2RjIiwiZXhwIjoxNzQ2NjQxMzk3fQ.UdoMNTfT9bLpm3CkfsGjZ6CnmiU4t4118tnXgWAMJn4"  
+
+curl -X DELETE \
+  'http://localhost:8080/chats' \
+  -H 'accept: application/json' \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjgxYmE3YWY1ZTdiOTRiZmY0ZDc5ZTdhIiwiZXhwIjoxNzQ2NjQ0ODQ4fQ.8VudHJxU1eKI2qNSSZUCYVJZ7tjzzJDDdkPOjZ7cl0U"
