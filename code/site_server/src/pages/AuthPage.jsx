@@ -42,8 +42,8 @@ export default function AuthPage() {
       if (!response.ok) {
         alert("ошибка: " + data.detail);
       } else {
-        alert(isLogin ? "вход выполнен" : "регистрация прошла успешно");
-        // здесь можно сохранить токен и перейти на следующий экран
+        localStorage.setItem("token", data.token); // Сохраняем токен
+        window.location.href = "/chats"; // Перенаправляем на страницу чатов
       }
     } catch (err) {
       alert("ошибка запроса: " + err.message);

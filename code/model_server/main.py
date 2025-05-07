@@ -8,7 +8,7 @@ from schemas.schemas import AuthData, AuthTokenResponse
 from pathlib import Path
 from dotenv import load_dotenv
 from os import getenv
-from jwt.jwt import create_access_token, verify_token
+from jwt_token.jwt_token import create_access_token, verify_token
 from datetime import timedelta
 
 env_file = Path(__file__).parent.parent / ".env"
@@ -110,5 +110,5 @@ if __name__ == "__main__":
     )
     
     
-# curl -X GET http://localhost:8080/me \
-#   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjgwYmE0N2ZiMzIyODdkOWRlNjgzNGEwIiwiZXhwIjoxNzQ1NjA0MzMxfQ.U5OY8XYihgkRKiq6OZYPCv-2pEWxso5gh9YbGPHBGYk"
+curl -X GET http://localhost:8080/me \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjgxYjc3ZTVhYmIxOTY3NTAxZWEwODI4IiwiZXhwIjoxNzQ2NjMyMzUxfQ.ARdyOZkzeD00uXIeeF0A-FOBy2DuARPtcRImHe9oPgc"

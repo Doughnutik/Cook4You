@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Cook4You API
-  version: 1.0.0
+  version: 1.1.0
 
 paths:
   /register:
@@ -73,8 +73,239 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
+  /chats:
+    get:
+      summary: Получить список чатов пользователя
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Список чатов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatData'
+        400:
+          description: Некорректные параметры запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        401:
+          description: Неавторизован
+        500:
+          description: Ошибка получения чатов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+    delete:
+      summary: Удалить все чаты пользователя
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Список чатов удалён
+        400:
+          description: Некорректные параметры запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        401:
+          description: Неавторизован
+        500:
+          description: Ошибка удаления чатов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+  
+  /chat:
+    post:
+      summary: Создать новый чат
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+      responses:
+        200:
+          description: Чат создан
+        400:
+          description: Некорректные параметры запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        401:
+          description: Неавторизован
+        500:
+          description: Ошибка создания чатов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+
+  /chat/{chat_id}:
+    get:
+      summary: Получить чат по ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: chat_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Чат получен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatData'
+        400:
+          description: Некорректные параметры запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        401:
+          description: Неавторизован
+        404:
+          description: Чат не найден
+        500:
+          description: Ошибка получения чата
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+
+    delete:
+      summary: Удалить чат по ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: chat_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Успешное удаление
+        400:
+          description: Некорректные параметры запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        401:
+          description: Неавторизован
+        404:
+          description: Чат не найден
+        500:
+          description: Ошибка удаления чата
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+
+  /chat/{chat_id}/rename:
+    put:
+      summary: Переименовать чат по ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: chat_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+              properties:
+                title:
+                  type: string
+      responses:
+        200:
+          description: Название чата обновлено
+        400:
+          description: Некорректные параметры запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        401:
+          description: Неавторизован
+        404:
+          description: Чат не найден
+        500:
+          description: Ошибка переименования чата
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+
+  /chat/{chat_id}/add-message:
+    post:
+      summary: Добавить сообщение в чат по ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: chat_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageData'
+      responses:
+        200:
+          description: Сообщение добавлено
+        400:
+          description: Некорректные параметры запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        401:
+          description: Неавторизован
+        404:
+          description: Чат не найден
+        500:
+          description: Ошибка добавления сообщения в чат
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+        
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     InternalServerError:
       type: object
@@ -92,6 +323,9 @@ components:
 
     AuthData:
       type: object
+      required:
+        - email
+        - password
       properties:
         email:
           type: string
@@ -109,3 +343,44 @@ components:
         user_id:
           type: string
           description: ID пользователя
+    
+    MessageData:
+      type: object
+      required:
+        - role
+        - type
+        - content
+        - created_at
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        type:
+          type: string
+          enum: [text, image]
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    
+    ChatData:
+      type: object
+      required:
+        - title
+        - created_at
+        - updated_at
+        - messages
+      properties:
+        title:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageData'

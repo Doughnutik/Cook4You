@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt, ExpiredSignatureError
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -16,7 +16,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.now() + timedelta(minutes=JWT_TIME)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=JWT_TIME)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, key=JWT_SECRET, algorithm=JWT_ALGO)
     return encoded_jwt
