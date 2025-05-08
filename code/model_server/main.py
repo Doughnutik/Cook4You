@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends, Body
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-import asyncio
 from logger import logger
 from client import client
 from schemas.schemas import AuthData, AuthTokenResponse, ChatData, MessageData, CreateUpdateChat
@@ -9,7 +8,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 from os import getenv
 from jwt_token.jwt_token import create_access_token, verify_token
-from datetime import timedelta
 
 env_file = Path(__file__).parent.parent / ".env"
 load_dotenv(env_file)
@@ -153,38 +151,6 @@ async def add_message_to_chat(chat_id: str, message: MessageData, user_id: str =
                     updated_at=chat['updated_at'],
                     messages=chat['messages'])
 
-async def main():
-    logger.info("Сервер запущен")
-    id = "-"
-    while id == "-":
-        email = input("Введите email: ")
-        password = input("Введите пароль: ")
-        id = await client.get_user_id(email, password)
-        if len(id) == 0:
-            id = await client.new_user(email, password)
-        elif id == "-":
-            print("Неверный пароль, попробуйте снова")
-    
-    chats = await client.get_user_chats(id)
-    print()
-    print(chats)
-    print()
-    
-    chat_id = input("Введите chat_id: ")
-    if chat_id == "-":
-        title = input("Введите название нового чата: ")
-        chat_id = await client.new_chat(id, title)
-    while True:
-        user_input = input("Ваш вопрос: ")
-        if user_input == "exit":
-            break
-        elif user_input == "image":
-            url = await client.ask_question(id, chat_id, '', "image")
-            print(f"Ссылка на картинку: {url}")
-        else:
-            response = await client.ask_question(id, chat_id, user_input, "text")
-            print(f"Ответ модели: {response}")
-
 if __name__ == "__main__":
     logger.info("Сервер запущен на порту: %d", int(MODEL_SERVER_PORT))
     logger.info(f"http://{MODEL_SERVER_HOST}:{MODEL_SERVER_PORT}/docs")
@@ -194,22 +160,12 @@ if __name__ == "__main__":
         port=int(MODEL_SERVER_PORT),
         log_level="info",
     )
-    
-    
-curl -X PUT http://localhost:8080/chat/{681bad955e7b94bff4d79e7c}/add-message \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjgxYmE3YWY1ZTdiOTRiZmY0ZDc5ZTdhIiwiZXhwIjoxNzQ2NjQ0ODQ4fQ.8VudHJxU1eKI2qNSSZUCYVJZ7tjzzJDDdkPOjZ7cl0U" \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "role": "user",
-  "type": "text",
-  "content": "привет, как дела",
-  "created_at": "2025-05-07T19:03:53.275Z"
-}'
 
-# curl -X GET http://localhost:8080/chats \
-#   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjgwYjZlMjJkNzE2YTVjZGFmYTUxY2RjIiwiZXhwIjoxNzQ2NjQxMzk3fQ.UdoMNTfT9bLpm3CkfsGjZ6CnmiU4t4118tnXgWAMJn4"  
-
-curl -X DELETE \
-  'http://localhost:8080/chats' \
-  -H 'accept: application/json' \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjgxYmE3YWY1ZTdiOTRiZmY0ZDc5ZTdhIiwiZXhwIjoxNzQ2NjQ0ODQ4fQ.8VudHJxU1eKI2qNSSZUCYVJZ7tjzzJDDdkPOjZ7cl0U"
+# curl -X 'GET' \
+#   'http://localhost:8080/chats' \
+#   -H 'accept: application/json' \
+#   -H 'Content-Type: application/json' \
+#   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjgxYmE3YWY1ZTdiOTRiZmY0ZDc5ZTdhIiwiZXhwIjoxNzQ2NzQ1OTU3fQ.qE0l5DuUAvf04dqKvDdnm1iWWRoAqiWqlU1bZpjf7Vg" \
+#   -d '{
+#   "title": "second_food"
+# }'

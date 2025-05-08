@@ -1,29 +1,31 @@
 // src/pages/ChatListPage.jsx
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { isTokenValid } from "../utils/auth";
 
 export default function ChatListPage() {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      window.location.href = "/"; // редирект если не авторизован
+    if (!isTokenValid()) {
+      localStorage.removeItem("token");
+      navigate(`/`);
       return;
     }
 
-    // Загрузи чаты
-    fetch("http://localhost:8000/chats", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const token = localStorage.getItem("token");
+
+    fetch("http://localhost:8080/chats", {
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
         if (!res.ok) throw new Error("не удалось загрузить чаты");
         return res.json();
       })
       .then((data) => {
-        setChats(data.chats || []);
+        setChats(data || []);
         setLoading(false);
       })
       .catch((err) => {
@@ -31,6 +33,10 @@ export default function ChatListPage() {
         setLoading(false);
       });
   }, []);
+
+  const handleChatClick = (chatId) => {
+    navigate(`/chat/${chatId}`);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -44,8 +50,9 @@ export default function ChatListPage() {
           <ul className="space-y-2">
             {chats.map((chat) => (
               <li
-                key={chat.id}
-                className="p-4 rounded-lg border hover:bg-gray-50 transition"
+                key={chat.chat_id}
+                className="p-4 rounded-lg border hover:bg-gray-50 transition cursor-pointer"
+                onClick={() => handleChatClick(chat.chat_id)}
               >
                 <span className="font-medium">{chat.title}</span>
               </li>
