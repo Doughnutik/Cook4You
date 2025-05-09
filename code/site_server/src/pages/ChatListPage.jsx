@@ -86,24 +86,24 @@ export default function ChatListPage() {
             <ul className="space-y-2 mb-4">
               {chats.map((chat) => (
                 <li
-                  key={chat.chat_id}
-                  className="p-4 rounded-lg border hover:bg-gray-50 transition cursor-pointer flex justify-between items-center"
+                key={chat.chat_id}
+                className="p-4 rounded-lg border hover:bg-gray-50 transition cursor-pointer"
+                onClick={() => handleChatClick(chat.chat_id)}
                 >
-                  <span
-                    className="font-medium"
-                    onClick={() => handleChatClick(chat.chat_id)}
-                  >
-                    {chat.title}
-                  </span>
-                  <button
-                    className="text-red-600 text-sm ml-4"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteChat(chat.chat_id);
-                    }}
-                  >
-                    Удалить
-                  </button>
+                  <div className="flex flex-col">
+                    <span className="font-medium break-all whitespace-pre-wrap text-gray-800">
+                      {chat.title}
+                    </span>
+                    <button
+                      className="text-red-600 text-sm mt-2 self-start"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteChat(chat.chat_id);
+                      }}
+                    >
+                      Удалить
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>

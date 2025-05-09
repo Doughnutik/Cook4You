@@ -69,42 +69,42 @@ export default function ChatDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-md p-6 flex flex-col flex-grow">
-        <div className="overflow-y-auto max-h-[400px] space-y-3 mb-4">
-          {chat.messages.slice(1).map((msg, i) => (
-            <div key={i} className="max-w-xl w-full border-b pb-2 break-words">
-              <div className="font-semibold">{msg.role}</div>
-              <div className="whitespace-pre-wrap break-all w-full overflow-hidden text-gray-800">
-                {msg.content}
-              </div>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
+		<div className="w-full max-w-2xl bg-white rounded-2xl shadow-md p-6 flex flex-col flex-grow h-full">
+			<div className="overflow-y-auto flex-1 space-y-3 mb-4">
+			{chat.messages.slice(1).map((msg, i) => (
+				<div key={i} className="max-w-xl w-full border-b pb-2 break-words">
+				<div className="font-semibold">{msg.role}</div>
+				<div className="whitespace-pre-wrap break-all w-full overflow-hidden text-gray-800">
+					{msg.content}
+				</div>
+				</div>
+			))}
+			<div ref={messagesEndRef} />
+			</div>
 
-        <div className="flex space-x-2 mt-auto">
-          <textarea
-            className="w-full max-w-xl border rounded-xl px-4 py-2 resize-none"
-            placeholder="Введите сообщение..."
-            rows={2}
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={async (e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                await handleSendMessage();
-              }
-            }}
-          />
-          <button
-            className="bg-blue-500 text-white px-4 py-2 rounded-xl"
-            onClick={handleSendMessage}
-            disabled={sending}
-          >
-            Отправить
-          </button>
-        </div>
-      </div>
-    </div>
+			<div className="flex space-x-2 mt-auto">
+			<textarea
+				className="w-full max-w-xl border rounded-xl px-4 py-2 resize-none"
+				placeholder="Введите сообщение..."
+				rows={2}
+				value={newMessage}
+				onChange={(e) => setNewMessage(e.target.value)}
+				onKeyDown={async (e) => {
+				if (e.key === "Enter" && !e.shiftKey) {
+					e.preventDefault();
+					await handleSendMessage();
+				}
+				}}
+			/>
+			<button
+				className="bg-blue-500 text-white px-4 py-2 rounded-xl"
+				onClick={handleSendMessage}
+				disabled={sending}
+			>
+				Отправить
+			</button>
+			</div>
+		</div>
+	</div>
   );
 }

@@ -28,25 +28,26 @@ export default function CreateChatForm({ onChatCreated }) {
     }
   };
 
-   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleCreate();
     }
   };
+
   return (
-    <div className="flex gap-2 mb-4">
-      <input
-        type="text"
-        placeholder="Название чата"
-        className="border px-4 py-2 rounded-xl flex-1"
+    <div className="flex flex-col gap-2 mb-4">
+      <textarea
+        placeholder="Название чата (Enter — создать, Shift+Enter — новая строка)"
+        className="border px-4 py-2 rounded-xl resize-none whitespace-pre-wrap"
+        rows={2}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={creating}
       />
       <button
-        className="bg-green-600 text-white px-4 py-2 rounded-xl"
+        className="bg-green-600 text-white px-4 py-2 rounded-xl self-start"
         onClick={handleCreate}
         disabled={creating}
       >
