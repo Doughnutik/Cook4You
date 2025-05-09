@@ -356,8 +356,6 @@ components:
     MessageData:
       type: object
       required:
-        - role
-        - type
         - content
       properties:
         role:

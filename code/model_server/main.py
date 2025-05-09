@@ -134,7 +134,7 @@ async def rename_chat(chat_id: str, data: CreateUpdateChat, user_id: str = Depen
                     updated_at=chat['updated_at'],
                     messages=chat['messages'])
 
-@app.put("/chat/{chat_id}/add-message", response_model=ChatData)
+@app.post("/chat/{chat_id}/add-message", response_model=ChatData)
 async def add_message_to_chat(chat_id: str, message: MessageData, user_id: str = Depends(verify_token)):
     auth_correct = await client.chat_exists_for_user(chat_id, user_id)
     if not auth_correct:
@@ -161,11 +161,11 @@ if __name__ == "__main__":
         log_level="info",
     )
 
-# curl -X 'GET' \
-#   'http://localhost:8080/chats' \
-#   -H 'accept: application/json' \
-#   -H 'Content-Type: application/json' \
-#   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjgxYmE3YWY1ZTdiOTRiZmY0ZDc5ZTdhIiwiZXhwIjoxNzQ2NzQ1OTU3fQ.qE0l5DuUAvf04dqKvDdnm1iWWRoAqiWqlU1bZpjf7Vg" \
-#   -d '{
-#   "title": "second_food"
-# }'
+curl -X 'POST' \
+  'http://localhost:8080/chat' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjgxZDQ4YTg0OTg1YTM0YWRkOTc0OWVkIiwiZXhwIjoxNzQ2NzQ5NzY4fQ.SuH40C3y1SrOzqoNKLO_ULn65HyDR_YOiy-sRE-pO_w" \
+  -d '{
+  "title": "7"
+}'

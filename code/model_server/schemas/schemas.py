@@ -20,10 +20,10 @@ class TypeEnum(str, Enum):
     image = "image"
     
 class MessageData(BaseModel):
-    role: RoleEnum
-    type: TypeEnum
+    role: Optional[RoleEnum] = RoleEnum.user
+    type: Optional[TypeEnum] = TypeEnum.text
     content: str
-    created_at: Optional[datetime] = None
+    created_at: Optional[datetime] = datetime.now()
     
 class ChatData(BaseModel):
     chat_id: str

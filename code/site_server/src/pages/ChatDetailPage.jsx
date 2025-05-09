@@ -1,58 +1,108 @@
-// src/pages/ChatDetailPage.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { isTokenValid } from "../utils/auth";
+import {
+	fetchChat,
+	sendMessage,
+} from "../handlers";
+import { useAutoScroll } from "../hooks/useAutoScroll";
 
 export default function ChatDetailPage() {
   const { chatId } = useParams();
   const navigate = useNavigate();
   const [chat, setChat] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [newMessage, setNewMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
+    const loadChat = async () => {
+      if (!isTokenValid()) {
+        localStorage.removeItem("token");
+        navigate(`/`);
+        return;
+      }
+
+      const token = localStorage.getItem("token");
+
+      try {
+        const data = await fetchChat(chatId, token);
+        setChat(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadChat();
+  }, [chatId]);
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim()) return;
+
     if (!isTokenValid()) {
       localStorage.removeItem("token");
       navigate(`/`);
       return;
     }
 
+    setSending(true);
     const token = localStorage.getItem("token");
 
-    fetch(`http://localhost:8080/chat/${chatId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("не удалось загрузить чат");
-        return res.json();
-      })
-      .then((data) => {
-        setChat(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
-  }, [chatId]);
+    try {
+      const updatedChat = await sendMessage(chatId, newMessage.trim(), token);
+      setChat(updatedChat);
+      setNewMessage("");
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  useAutoScroll(messagesEndRef, chat?.messages);
 
   if (loading) return <p>Загрузка...</p>;
   if (!chat) return <p>Чат не найден</p>;
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-2xl mx-auto bg-white shadow-md rounded-2xl p-6">
-        <h1 className="text-2xl font-bold mb-4">{chat.title}</h1>
-        <div className="space-y-2">
-          {chat.messages.length === 0 ? (
-            <p className="text-gray-600">В чате нет сообщений</p>
-          ) : (
-            chat.messages.slice(1).map((msg, i) => (
-              <div key={i} className="border-b pb-2">
-                <div className="font-semibold">{msg.role}</div>
-                <div>{msg.content}</div>
+    <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-md p-6 flex flex-col flex-grow">
+        <div className="overflow-y-auto max-h-[400px] space-y-3 mb-4">
+          {chat.messages.slice(1).map((msg, i) => (
+            <div key={i} className="max-w-xl w-full border-b pb-2 break-words">
+              <div className="font-semibold">{msg.role}</div>
+              <div className="whitespace-pre-wrap break-all w-full overflow-hidden text-gray-800">
+                {msg.content}
               </div>
-            ))
-          )}
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="flex space-x-2 mt-auto">
+          <textarea
+            className="w-full max-w-xl border rounded-xl px-4 py-2 resize-none"
+            placeholder="Введите сообщение..."
+            rows={2}
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={async (e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                await handleSendMessage();
+              }
+            }}
+          />
+          <button
+            className="bg-blue-500 text-white px-4 py-2 rounded-xl"
+            onClick={handleSendMessage}
+            disabled={sending}
+          >
+            Отправить
+          </button>
         </div>
       </div>
     </div>
