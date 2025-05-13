@@ -17,7 +17,7 @@ class Client:
         self.logger = logger
         self.logger.info("Создан клиент для обработки запросов")
 
-    async def ask_question(self, user_id: str, chat_id: str, content: str, type: Literal["text", "image"]) -> str:
+    async def ask_question(self, user_id: str, chat_id: str, type: Literal["text", "image"]) -> str:
         """
         Обрабатывает запрос пользователя
         """
@@ -28,16 +28,14 @@ class Client:
         
         match type:
             case "text":
-                if len(content) == 0:
-                    return ""
-                return await self.generate_response(chat_id, content)
+                return await self.generate_response(chat_id)
             case "image":
                 return await self.generate_image(chat_id)
             case _:
                 logger.warning("ask_question: пришёл неизвестный тип вопроса")
                 return ""
 
-    async def generate_response(self, chat_id: str, content: str) -> str:
+    async def generate_response(self, chat_id: str) -> str:
         """
         Генерирует ответ на вопрос пользователя.
         """
@@ -45,19 +43,14 @@ class Client:
         if len(history) == 0:
             return ""
         
-        history.append({
-            "role": "user",
-            "content": content
-        })
-        
         result = await self.model.response(history)
         if len(result) == 0:
             return ""
         
-        success_assistant = await self.storage.add_message(chat_id, "assistant", "text", result)
-        success_user = await self.storage.add_message(chat_id, "user", "text", content)
-        if not success_assistant or not success_user:
-            self.logger.error(f"generate_response: ошибка добавления сообщений: success_assistant = {success_assistant}, success_user = {success_user}")
+        success = await self.storage.add_message(chat_id, "assistant", "text", result)
+        if not success:
+            self.logger.error(f"generate_response: ошибка добавления ответа модели:\n{result}")
+            return ""
         
         return result
     
@@ -75,7 +68,8 @@ class Client:
         
         success = await self.storage.add_message(chat_id, "assistant", "image", result)
         if not success:
-            self.logger.error(f"ask_question: ошибка добавления url")
+            self.logger.error(f"generate_image: ошибка добавления ответа модели:\n{result}")
+            return ""
         
         return result
     

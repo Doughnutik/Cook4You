@@ -5,3 +5,5 @@ export { deleteChat } from "./deleteChat";
 export { deleteAllChats } from "./deleteAllChats";
 export { fetchChat } from "./fetchChat";
 export { sendMessage } from "./sendMessage";
+export { fetchModelAnswerText } from "./fetchModelAnswerText";
+export { fetchModelAnswerImage } from "./fetchModelAnswerImage";

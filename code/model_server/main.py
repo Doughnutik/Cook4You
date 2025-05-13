@@ -1,9 +1,10 @@
 from fastapi import FastAPI, HTTPException, Depends, Body
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import asyncio
 from logger import logger
 from client import client
-from schemas.schemas import AuthData, AuthTokenResponse, ChatData, MessageData, CreateUpdateChat
+from schemas.schemas import *
 from pathlib import Path
 from dotenv import load_dotenv
 from os import getenv
@@ -116,23 +117,6 @@ async def delete_chat(chat_id: str, user_id: str = Depends(verify_token)):
     result = await client.delete_chat(chat_id, user_id)
     if not result:
         raise HTTPException(status_code=500, detail="ошибка удаления чата")
-    
-@app.put("/chat/{chat_id}/rename", response_model=ChatData)
-async def rename_chat(chat_id: str, data: CreateUpdateChat, user_id: str = Depends(verify_token)):
-    auth_correct = await client.chat_exists_for_user(chat_id, user_id)
-    if not auth_correct:
-        raise HTTPException(status_code=404, detail="чат для данного пользователя не найден")
-    result = await client.rename_chat(chat_id, data.title)
-    if not result:
-        raise HTTPException(status_code=500, detail="ошибка переименования чата")
-    chat = await client.get_chat(chat_id)
-    if len(chat) == 0:
-        raise HTTPException(status_code=500, detail="ошибка получения чата")
-    return ChatData(chat_id=chat_id,
-                    title=chat['title'],
-                    created_at=chat['created_at'],
-                    updated_at=chat['updated_at'],
-                    messages=chat['messages'])
 
 @app.post("/chat/{chat_id}/add-message", response_model=ChatData)
 async def add_message_to_chat(chat_id: str, message: MessageData, user_id: str = Depends(verify_token)):
@@ -150,6 +134,58 @@ async def add_message_to_chat(chat_id: str, message: MessageData, user_id: str =
                     created_at=chat['created_at'],
                     updated_at=chat['updated_at'],
                     messages=chat['messages'])
+    
+@app.get("/chat/{chat_id}/model-answer-text", response_model=MessageData)
+async def get_chat(chat_id: str, user_id: str = Depends(verify_token)):
+    auth_correct = await client.chat_exists_for_user(chat_id, user_id)
+    if not auth_correct:
+        raise HTTPException(status_code=404, detail="чат для данного пользователя не найден")
+    response = await client.ask_question(user_id, chat_id, 'text')
+    if len(response) == 0:
+        raise HTTPException(status_code=500, detail="ошибка получения ответа модели")
+    return MessageData(role=RoleEnum.assistant, type=TypeEnum.text, content=response)
+
+@app.get("/chat/{chat_id}/model-answer-image", response_model=MessageData)
+async def get_chat(chat_id: str, user_id: str = Depends(verify_token)):
+    auth_correct = await client.chat_exists_for_user(chat_id, user_id)
+    if not auth_correct:
+        raise HTTPException(status_code=404, detail="чат для данного пользователя не найден")
+    response = await client.ask_question(user_id, chat_id, 'image')
+    if len(response) == 0:
+        raise HTTPException(status_code=500, detail="ошибка получения ссылки на изображение")
+    return MessageData(role=RoleEnum.assistant, type=TypeEnum.image, content=response)
+    
+async def main():
+    logger.info("Сервер запущен")
+    id = "-"
+    while id == "-":
+        email = input("Введите email: ")
+        password = input("Введите пароль: ")
+        id = await client.get_user_id(email, password)
+        if len(id) == 0:
+            id = await client.new_user(email, password)
+        elif id == "-":
+            print("Неверный пароль, попробуйте снова")
+    
+    chats = await client.get_user_chats(id)
+    print()
+    print(chats)
+    print()
+    
+    chat_id = input("Введите chat_id: ")
+    if chat_id == "-":
+        title = input("Введите название нового чата: ")
+        chat_id = await client.new_chat(id, title)
+    while True:
+        user_input = input("Ваш вопрос: ")
+        if user_input == "exit":
+            break
+        elif user_input == "image":
+            url = await client.ask_question(id, chat_id, '', "image")
+            print(f"Ссылка на картинку: {url}")
+        else:
+            response = await client.ask_question(id, chat_id, user_input, "text")
+            print(f"Ответ модели: {response}")
 
 if __name__ == "__main__":
     logger.info("Сервер запущен на порту: %d", int(MODEL_SERVER_PORT))
@@ -160,12 +196,26 @@ if __name__ == "__main__":
         port=int(MODEL_SERVER_PORT),
         log_level="info",
     )
+    # asyncio.run(main())
 
-curl -X 'POST' \
-  'http://localhost:8080/chat' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjgxZDQ4YTg0OTg1YTM0YWRkOTc0OWVkIiwiZXhwIjoxNzQ2NzQ5NzY4fQ.SuH40C3y1SrOzqoNKLO_ULn65HyDR_YOiy-sRE-pO_w" \
-  -d '{
-  "title": "7"
-}'
+# curl -X 'GET' \
+#   'http://localhost:8080/chat/68236f61f797d375cab54c7d/model-answer-image' \
+#   -H 'accept: application/json' \
+#   -H 'Content-Type: application/json' \
+#   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjgxZDZkODI0OTg1YTM0YWRkOTc0YTZjIiwiZXhwIjoxNzQ3MTUzMjQ0fQ.U6pVsc0YtKdmEpVCfpfkLKkRXKRJoekWGGlBhYx8GlA" \
+#   -d '{
+#   "role": "user",
+#   "type": "text",
+#   "content": "Хочу приготовить салат цезарь",
+#   "created_at": "2025-05-13T19:10:22.849456"
+# }'
+
+
+#TODO 1) Добавить кнопку "выйти", чтобы поменять учётную запись
+#TODO 2) Разобраться, как поднять всё это на удалённом серваке (оба сервака + бд)
+#TODO 3) Почистить код от мусора, почистить бд, если нужно, почистить логи. Загрузить на сервак чистое приложение.
+#TODO 4) Догрузить все необходимые библиотеки в requirements.txt, загрузить финальный коммит в репозиторий, оформить Readme с полноценной инструкцией по локальному запуску
+
+#Тесты на 10 пользователях
+#1:40 - текст
+#2:40 - изображение

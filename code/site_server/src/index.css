@@ -1,6 +1,10 @@
 @tailwind components;
 @tailwind utilities;
 
+.font-bold {
+  font-weight: 700 !important;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
