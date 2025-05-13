@@ -1,7 +1,6 @@
-from fastapi import FastAPI, HTTPException, Depends, Body
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-import asyncio
 from logger import logger
 from client import client
 from schemas.schemas import *
@@ -17,11 +16,7 @@ MODEL_SERVER_PORT = getenv("MODEL_SERVER_PORT")
 SITE_SERVER_HOST = getenv("SITE_SERVER_HOST")
 SITE_SERVER_PORT = getenv("SITE_SERVER_PORT")
 
-
-# Создаем экземпляр приложения FastAPI
 app = FastAPI()
-
-# Добавляем CORS для разрешения запросов с твоего фронтенда
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[f"http://{SITE_SERVER_HOST}:{SITE_SERVER_PORT}"],
@@ -154,38 +149,6 @@ async def get_chat(chat_id: str, user_id: str = Depends(verify_token)):
     if len(response) == 0:
         raise HTTPException(status_code=500, detail="ошибка получения ссылки на изображение")
     return MessageData(role=RoleEnum.assistant, type=TypeEnum.image, content=response)
-    
-async def main():
-    logger.info("Сервер запущен")
-    id = "-"
-    while id == "-":
-        email = input("Введите email: ")
-        password = input("Введите пароль: ")
-        id = await client.get_user_id(email, password)
-        if len(id) == 0:
-            id = await client.new_user(email, password)
-        elif id == "-":
-            print("Неверный пароль, попробуйте снова")
-    
-    chats = await client.get_user_chats(id)
-    print()
-    print(chats)
-    print()
-    
-    chat_id = input("Введите chat_id: ")
-    if chat_id == "-":
-        title = input("Введите название нового чата: ")
-        chat_id = await client.new_chat(id, title)
-    while True:
-        user_input = input("Ваш вопрос: ")
-        if user_input == "exit":
-            break
-        elif user_input == "image":
-            url = await client.ask_question(id, chat_id, '', "image")
-            print(f"Ссылка на картинку: {url}")
-        else:
-            response = await client.ask_question(id, chat_id, user_input, "text")
-            print(f"Ответ модели: {response}")
 
 if __name__ == "__main__":
     logger.info("Сервер запущен на порту: %d", int(MODEL_SERVER_PORT))
@@ -196,25 +159,3 @@ if __name__ == "__main__":
         port=int(MODEL_SERVER_PORT),
         log_level="info",
     )
-    # asyncio.run(main())
-
-# curl -X 'GET' \
-#   'http://localhost:8080/chat/68236f61f797d375cab54c7d/model-answer-image' \
-#   -H 'accept: application/json' \
-#   -H 'Content-Type: application/json' \
-#   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjgxZDZkODI0OTg1YTM0YWRkOTc0YTZjIiwiZXhwIjoxNzQ3MTUzMjQ0fQ.U6pVsc0YtKdmEpVCfpfkLKkRXKRJoekWGGlBhYx8GlA" \
-#   -d '{
-#   "role": "user",
-#   "type": "text",
-#   "content": "Хочу приготовить салат цезарь",
-#   "created_at": "2025-05-13T19:10:22.849456"
-# }'
-
-
-#TODO 2) Разобраться, как поднять всё это на удалённом серваке (оба сервака + бд)
-#TODO 3) Почистить код от мусора, почистить бд, если нужно, почистить логи. Загрузить на сервак чистое приложение.
-#TODO 4) Догрузить все необходимые библиотеки в requirements.txt, загрузить финальный коммит в репозиторий, оформить Readme с полноценной инструкцией по локальному запуску
-
-#Тесты на 10 пользователях
-#1:40 - текст
-#2:40 - изображение

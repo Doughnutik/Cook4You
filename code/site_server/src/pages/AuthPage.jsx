@@ -42,8 +42,8 @@ export default function AuthPage() {
       if (!response.ok) {
         alert("ошибка: " + data.detail);
       } else {
-        localStorage.setItem("token", data.token); // Сохраняем токен
-        window.location.href = "/chats"; // Перенаправляем на страницу чатов
+        localStorage.setItem("token", data.token);
+        window.location.href = "/chats";
       }
     } catch (err) {
       alert("ошибка запроса: " + err.message);

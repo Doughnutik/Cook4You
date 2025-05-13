@@ -79,16 +79,15 @@ export default function ChatDetailPage() {
     }
 
     const token = localStorage.getItem("token");
-
     try {
       const imageUrl = await fetchModelAnswerImage(chatId, token);
-      const updatedChat = {
-        ...chat,
+      setChat((prevChat) => ({
+        ...prevChat,
         messages: [
-          ...chat.messages,
+          ...prevChat.messages,
+          imageUrl,
         ],
-      };
-      setChat(updatedChat);
+      }));
     } catch (error) {
       console.error("Ошибка при получении изображения:", error);
     }

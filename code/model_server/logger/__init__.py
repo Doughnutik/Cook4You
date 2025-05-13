@@ -1,7 +1,5 @@
 import logging
 from pathlib import Path
-from dotenv import load_dotenv
-from os import getenv
 
 log_file = Path(__file__).parent / "logs.log"
 logging.basicConfig(level=logging.INFO)
