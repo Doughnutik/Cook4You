@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  mongodb:
+    platform: linux/arm64
+    image: mongo:5.0
+    restart: always
+    container_name: cook4you-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: username
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:

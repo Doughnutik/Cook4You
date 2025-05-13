@@ -122,7 +122,6 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
 .venv
 env/
 venv/
@@ -173,7 +172,5 @@ template.cls
 har_and_cookies
 stuff
 
-*docker*
-*Docker*
 .vscode
 tex&docs/
