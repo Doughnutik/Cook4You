@@ -94,6 +94,10 @@ export default function ChatDetailPage() {
     }
   };
 
+  const handleLogout = () => {
+    navigate(`/chats`);
+  };
+
   useAutoScroll(messagesEndRef, chat?.messages);
 
   if (loading) return <p>Загрузка...</p>;
@@ -101,6 +105,12 @@ export default function ChatDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center">
+        <button
+        className="absolute top-4 right-6 text-sm text-blue-600 hover:underline"
+        onClick={handleLogout}
+      >
+        Выйти
+      </button>
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-md p-6 flex flex-col flex-grow h-full">
         <div className="overflow-y-auto flex-1 space-y-3 mb-4">
           {chat.messages.slice(1).map((msg, i) => (

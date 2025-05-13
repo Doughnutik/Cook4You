@@ -66,11 +66,21 @@ export default function ChatListPage() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate(`/`);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-2xl mx-auto bg-white shadow-md rounded-2xl p-6">
         <h1 className="text-2xl font-bold mb-4">Ваши чаты</h1>
-
+        <button
+          className="text-sm text-blue-600 hover:underline"
+          onClick={handleLogout}
+        >
+          Выйти
+        </button>
         <CreateChatForm
           onChatCreated={(newChat) => {
             setChats((prev) => [newChat, ...prev]);

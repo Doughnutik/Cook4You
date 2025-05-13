@@ -65,7 +65,7 @@ class Model:
         
     async def image(self, history: list[dict]) -> str:
         prompt = await self.make_prompt_for_image_model(history)
-        self.logger.info(f"\nprompt для изображения: {prompt}\n")
+        # self.logger.info(f"\nprompt для изображения: {prompt}\n")
         if len(prompt) == 0:
             self.logger.error(f"image: пустой prompt для генерации изображения от провайдера")
             return ""
