@@ -1,0 +1,28 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+Person(user, "Пользователь")
+
+System_Boundary(site_system, "Cook4You") {
+  
+  Container(frontend, "Frontend", "React + Vite + Tailwind")
+  Container(backend, "Backend", "FastAPI + Uvicorn")
+  Container(model, "Model", "API для запросов к моделям генерации текста и изображений")
+  Container(jwt, "JWT авторизация", "Проверка и генерация JWT токенов")
+  ContainerDb(mongo, "MongoDB", "Хранит пользователей, чаты, сообщения")
+  ContainerDb(chats, "Chats", "Все чаты и контексты каждого чата")
+  ContainerDb(users, "Users", "Данные авторизации пользователей")
+}
+
+Rel(user, frontend, "Заходит на веб-сайт")
+Rel(frontend, backend, "Отправляет REST-запросы")
+
+Rel(backend, jwt, "")
+Rel(backend, mongo, "Читает/пишет")
+Rel(backend, model, "Запрос к модели")
+Rel(mongo, chats, "Получение чатов и контекстов")
+Rel(mongo, users, "Получения данных пользователя")
+
+@enduml
